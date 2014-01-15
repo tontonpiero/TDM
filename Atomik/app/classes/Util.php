@@ -1,6 +1,6 @@
 <?php
 
-class Utils
+class Util
 {
 	static public function test() {
 		return "test";

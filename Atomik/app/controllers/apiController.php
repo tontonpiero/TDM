@@ -4,6 +4,10 @@ include "_TDMController.php";
 
 class ApiController extends TDMController
 {
+    public function index()
+    {
+		return $this->jsonResult(Util::test());
+    }
 	
     public function login()
     {

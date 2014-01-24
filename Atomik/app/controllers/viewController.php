@@ -1,6 +1,8 @@
 <?php
 
-class ViewController extends Atomik\Controller\Controller
+include "_TDMController.php";
+
+class ViewController extends TDMController
 {
 	public $msg = "toto";
     public function index()

@@ -237,6 +237,12 @@ class ClassLoader
             }
         }
 
+        foreach ($this->fallbackDirs as $dir) {
+            if (file_exists($dir . DIRECTORY_SEPARATOR . lcfirst($classPath))) {
+                return $dir . DIRECTORY_SEPARATOR . lcfirst($classPath);
+            }
+        }
+
         if ($this->useIncludePath && $file = stream_resolve_include_path($classPath)) {
             return $file;
         }

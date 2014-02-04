@@ -6,17 +6,21 @@ class ApiController extends TDMController
 {
     public function index()
     {
-		return $this->jsonResult(Util::test());
+		return $this->jsonResult(array('status' => 'on'));
     }
 	
-    public function login()
+    public function auth()
     {
 		try {
-			$this->checkPlayer();
-			$this->checkPassword();
-		} catch (Exception $e) { return $this->jsonError($e->getMessage()); }
+			$id = $this->getParam('id');
+		} catch (Exception $e) { return $this->jsonError($e->getMessage(), $e->getCode()); }
 		
 		$db = Atomik::get('db');
+		$device = $db->selectOne('device', "identifier='$id'");
+		if( !$device ) return $this->jsonError('Player not found', 4);
+		
+		$this->player = $db->selectOne('player', 'playerId='.$device['playerId']);
+		
 		$updates = array();
 		$updates['authKeyExpires'] = $db->toDate(time() + 20);
 		$updates['authKey'] = md5($this->player['playerId'].'#'.$updates['authKeyExpires']);
@@ -26,26 +30,25 @@ class ApiController extends TDMController
 		return $this->jsonResult(array('playerId' => $this->player['playerId'], 'authKey' => $updates['authKey']));
     }
 	
-    public function getPlayerInfos()
+    public function me()
     {
 		try {
-			$this->checkPlayer();
 			$this->checkAuthKey();
-		} catch (Exception $e) { return $this->jsonError($e->getMessage()); }
+		} catch (Exception $e) { return $this->jsonError($e->getMessage(), $e->getCode()); }
 		
 		return $this->jsonResult($this->player);
     }
 	
-    public function getLevels()
+    public function levels()
     {
 		try {
-			$this->checkPlayer();
 			$this->checkAuthKey();
-		} catch (Exception $e) { return $this->jsonError($e->getMessage()); }
+		} catch (Exception $e) { return $this->jsonError($e->getMessage(), $e->getCode()); }
 		
+		$db = Atomik::get('db');
+		$levels = $db->select('level');
 		
-		
-		return $this->jsonResult(array());
+		return $this->jsonResult($levels);
     }
 }
 

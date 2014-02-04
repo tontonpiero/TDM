@@ -10,35 +10,42 @@ class TDMController extends Atomik\Controller\Controller
 		return $this->jsonResult(null);
     }
 	
-	protected function checkParam($param) {
-		if ( !isset($_REQUEST[$param]) ) throw new Exception('Missing parameter : '.$param);
+	protected function getParam($name, $optional = false) {
+		$ret = isset($_REQUEST[$name]) ? $_REQUEST[$name] : null;
+		if ( !$optional && !$ret ) throw new Exception('Missing parameter : '.$name, 1);
+		return $ret;
+	}
+	
+	protected function getHeader($name, $optional = false) {
+		$headers = Util::getHeaders();
+		$ret = isset($headers[$name]) ? $headers[$name] : null;
+		if ( !$optional && !$ret ) throw new Exception('Missing header : '.$name, 2);
+		return $ret;
 	}
 	
 	protected function checkPlayer() {
-		$this->checkParam('playerId');
+		$this->getParam('playerId');
 		$db = Atomik::get('db');
 		$this->player = $db->selectOne('player', 'playerId='.$_REQUEST['playerId']);
-		if( !$this->player ) throw new Exception('Player not found');
-	}
-	
-	protected function checkPassword() {
-		$this->checkParam('password');
-		if( $this->player['password'] !== $_REQUEST['password'] ) throw new Exception('Invalid password');
+		if( !$this->player ) throw new Exception('Player not found', 5);
 	}
 	
 	protected function checkAuthKey() {
-		return; // no authKey check for testing purpose
-		$this->checkParam('authKey');
-		if ( $this->player['authKey'] != $_REQUEST['authKey'] ) throw new Exception('Invalid authKey');
+		//return; // no authKey check for testing purpose
+		$authKey = $this->getHeader('Authkey');
+		$db = Atomik::get('db');
+		$this->player = $db->selectOne('player', "authKey='$authKey'");
+		if( !$this->player ) throw new Exception('Player not found', 5);
+		if ( $this->player['authKey'] != $authKey ) throw new Exception('Invalid authKey', 3);
 		$dt = new DateTime($this->player['authKeyExpires']);
 		$dtAuthKey = $dt->getTimestamp();
-		if( $dtAuthKey < time() ) throw new Exception('authKey expired');
+		if( $dtAuthKey < time() ) throw new Exception('AuthKey expired', 4);
 	}
 	
-	protected function jsonError($error) {
+	protected function jsonError($error, $code = 0) {
 		Atomik::disableLayout();
 		Atomik::setView('json');
-		return array('data' => array('error' => $error));
+		return array('data' => array('error' => $error, 'errorCode' => $code));
 	}
 	
 	protected function jsonResult($data) {

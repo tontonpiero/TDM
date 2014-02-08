@@ -6,6 +6,7 @@ package game.HUD
 	import org.flixel.FlxSprite;
 	import org.flixel.FlxText;
 	import org.flixel.plugin.FlxGroupXY;
+	import com.tontonpiero.Notifier;
 	
 	/**
 	 * ...
@@ -44,9 +45,12 @@ package game.HUD
 				add(range);
 				
 				exists = true;
+				
+				Notifier.notify("tower_selected", _target);
 			}
 			else {
 				exists = false;
+				Notifier.notify("tower_selected", null);
 			}
 		}
 		

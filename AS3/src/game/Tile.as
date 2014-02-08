@@ -8,7 +8,7 @@ package game
 	 */
 	public class Tile extends FlxSprite 
 	{
-		[Embed(source="../../bin/data/images/theme_grass.png")]
+		[Embed(source="../../lib/data/images/theme_grass.png")]
 		private var theme_grass:Class;
 		
 		public var type:String = null;

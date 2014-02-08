@@ -1,6 +1,7 @@
 package states
 {
 	import com.tontonpiero.CallManager;
+	import com.tontonpiero.TDM;
 	import flash.display.StageAlign;
 	import flash.display.StageDisplayState;
 	import flash.display.StageScaleMode;
@@ -25,20 +26,8 @@ package states
 		
 		override public function create():void 
 		{
-			CallManager.setup("http://tdm.tontonpiero.fr/api");
-			CallManager.httpGet("", null, onServiceInitiated, onServiceError);
-		}
-		
-		private function onServiceError(error:*):void 
-		{
-			FlxG.log("API error : " + error.msg + " (" + error.code + ")");
-			FlxG.switchState(new MenuState());
-		}
-		
-		private function onServiceInitiated(data:*):void 
-		{
-			FlxG.log("API status : " + data.status);
-			FlxG.switchState(new MenuState());
+			CallManager.setup("http://tdm.tontonpiero.fr/api", 2, 10000, FlxG.log, JSON.parse);
+			TDM.setup("ANDROID", "xxx", function():void { FlxG.switchState(new MenuState()); } );
 		}
 		
 	}

@@ -13,7 +13,7 @@ package game.HUD
 	 */
 	public class LevelThumbnail extends FlxGroupXY 
 	{
-		[Embed(source="../../../bin/data/images/button.png")] protected var ImgBG:Class;
+		[Embed(source="../../../lib/data/images/button.png")] protected var ImgBG:Class;
 		private var _levelData:*;
 		private var _playOnClick:Boolean;
 		public var bg:FlxSprite;

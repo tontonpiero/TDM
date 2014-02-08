@@ -9,11 +9,11 @@ package graphics
 	 */
 	public class Background extends FlxSprite 
 	{
-		[Embed(source="../../bin/data/images/bg.png")]
+		[Embed(source="../../lib/data/images/bg.png")]
 		private var bg_default:Class;
-		[Embed(source="../../bin/data/images/clouds.png")]
+		[Embed(source="../../lib/data/images/clouds.png")]
 		private var bg_clouds:Class;
-		[Embed(source="../../bin/data/images/bg_grass.png")]
+		[Embed(source="../../lib/data/images/bg_grass.png")]
 		private var bg_grass:Class;
 		
 		private var scroll:Boolean;

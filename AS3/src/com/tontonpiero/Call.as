@@ -7,6 +7,9 @@ package com.tontonpiero
 	import flash.net.URLRequest;
 	import flash.net.URLVariables;
 	import flash.system.Security;
+	import flash.utils.clearTimeout;
+	import flash.utils.getDefinitionByName;
+	import flash.utils.setTimeout;
 	/**
 	 * ...
 	 * @author Tontonpiero
@@ -20,6 +23,8 @@ package com.tontonpiero
 		public var options:*;
 		
 		private var _loader:CallLoader;
+		private var _timeoutId:uint;
+		private var _startTime:Number;
 		
 		public function Call(url:String, params:* = null, onComplete:Function = null, onError:Function = null, options:* = null) {
 			this.url = url;
@@ -30,41 +35,76 @@ package com.tontonpiero
 		}
 		
 		public function load(loader:CallLoader):void {
-			var vars:URLVariables = new URLVariables();
-			for (var key:String in params) vars[key] = params[key];
-			
 			_loader = loader;
-			_loader.addEventListener(HTTPStatusEvent.HTTP_STATUS, onHTTPStatusEvent);
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, onIOErrorEvent);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecurityError);
 			_loader.addEventListener(Event.COMPLETE, onLoadingComplete);
-			//trace(this, _loader.id);
+			log("[Call::load] " + this + " (" + _loader.id +")");
 			var request:URLRequest = new URLRequest(url);
-			if ( CallManager.headers ) request.requestHeaders = CallManager.headers;
-			if ( options && options._method ) request.method = options._method;
-			request.data = vars;
+			if ( CallManager.headers && getOption("header", true) ) request.requestHeaders = CallManager.headers;
+			request.method = getOption("method", "post");
+			
+			var data:* = params;
+			if ( getOption("contentType") ) {
+				request.contentType = getOption("contentType");
+			}
+			else {
+				if ( params && !(params is String) ) {
+					data = new URLVariables();
+					for (var key:String in params) data[key] = params[key];
+				}
+			}
+			//trace(request.method, request.contentType, request.url);
+			request.data = data;
 			_loader.available = false;
+			var timeout:Number = getOption("timeout", CallManager.defaultTimeout);
+			if ( timeout > 0 ) _timeoutId = setTimeout(onTimeout, timeout);
+			_startTime = new Date().time;
 			_loader.load(request);
+		}
+		
+		public function getOption(key:String, defaultValue:* = null):* {
+			return options && options[key] != undefined ? options[key] : defaultValue;
+		}
+		
+		private function onTimeout():void 
+		{
+			callbackError("call timeout", 0);
+			close();
+		}
+		
+		private function log(msg:String):void {
+			if ( CallManager.loggerFunction != null && getOption("debug", true) ) {
+				CallManager.loggerFunction.call(null, msg);
+			}
 		}
 		
 		private function onLoadingComplete(e:Event):void 
 		{
 			var data:* = null;
-			try { data = _loader.data ? JSON.parse(_loader.data) : null; } catch (err:Error){}
-			if ( data && data.error ) {
-				if ( data.errorCode == 4 ) { // authKey expired
-					CallManager.httpGet("auth", { id:"xxx" }, function(data:*):void { CallManager.addHeader("authKey", data.authKey); retry(); } );
-					return;
-				}
-				else {
-					if ( onError != null ) onError.call(null, { msg:data.error, code:data.errorCode } );
-				}
+			try { data = CallManager.parseFunction.call(null, _loader.data); } catch (err:Error) { data = null; }
+			if ( data && data.hasOwnProperty("error") ) {
+				callbackError(data.error, data.errorCode);
 			}
 			else {
-				if ( !data ) data = _loader.data;
-				if ( onComplete != null ) onComplete.call(null, data);
+				callbackComplete(data ? data : _loader.data);
 			}
-			destroy();
+			close();
+		}
+		
+		private function callbackComplete(data:*):void 
+		{
+			var params:Array = [data];
+			if( getOption("parameters") ) params = params.concat(getOption("parameters"));
+			if ( onComplete != null ) onComplete.apply(null, params);
+		}
+		
+		private function callbackError(msg:String, code:int):void 
+		{
+			log("[Call::error] " + this + " : " + msg + " (" + code +")");
+			var params:Array = [ { msg:msg, code:code } ];
+			if( getOption("parameters") ) params = params.concat(getOption("parameters"));
+			if ( onError != null ) onError.apply(null, params);
 		}
 		
 		private function retry():void 
@@ -77,38 +117,39 @@ package com.tontonpiero
 		
 		private function onIOErrorEvent(e:IOErrorEvent):void 
 		{
-			if ( onError != null ) onError.call(null, { msg:e.text, code:e.errorID });
-			destroy();
+			callbackError(e.text, e.errorID);
+			close();
 		}
 		
 		private function onSecurityError(e:SecurityErrorEvent):void 
 		{
-			if ( onError != null ) onError.call(null, { msg:e.text, code:e.errorID } );
-			destroy();
-		}
-		
-		private function onHTTPStatusEvent(e:HTTPStatusEvent):void 
-		{
-			//if ( onError != null ) onError.call(null, e.toString());
-			//destroy();
+			callbackError(e.text, e.errorID);
+			close();
 		}
 		
 		private function removeListeners():void 
 		{
 			if( _loader ) {
-				_loader.removeEventListener(HTTPStatusEvent.HTTP_STATUS, onHTTPStatusEvent);
 				_loader.removeEventListener(IOErrorEvent.IO_ERROR, onIOErrorEvent);
 				_loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecurityError);
 				_loader.removeEventListener(Event.COMPLETE, onLoadingComplete);
 			}
 		}
 		
-		public function destroy():void {
+		public function close():void {
+			var totalTime:Number = new Date().time - _startTime;
+			log("[Call::close] " + this + " (" + totalTime + "ms)");
+			clearTimeout(_timeoutId);
 			if( _loader ) {
 				removeListeners();
+				_loader.close();
 				_loader.available = true;
 			}
 			_loader = null;
+			onError = null;
+			onComplete = null;
+			params = null;
+			options = null;
 			CallManager.checkQueue();
 		}
 		

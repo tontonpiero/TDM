@@ -1,6 +1,7 @@
 package states 
 {
 	import com.tontonpiero.CallManager;
+	import com.tontonpiero.TDM;
 	import org.flixel.FlxButton;
 	import org.flixel.FlxG;
 	import org.flixel.FlxState;
@@ -21,15 +22,15 @@ package states
 			addBackButton(MenuState);
 			
 			add(new FlxButton(0, 100, "auth", function():void {
-				CallManager.httpGet("auth", { id:"xxx" }, onAuthComplete, onAuthError);
+				TDM.auth(onAuthComplete, onAuthError);
 			}));
 			
 			add(new FlxButton(0, 150, "me", function():void {
-				CallManager.httpGet("me", null, onMeComplete, onMeError);
+				TDM.me(onMeComplete, onMeError);
 			}));
 			
 			add(new FlxButton(0, 200, "levels", function():void {
-				CallManager.httpGet("levels", null, onLevelsComplete, onLevelsError);
+				TDM.levels(onLevelsComplete, onLevelsError);
 			}));
 		}
 		
@@ -41,7 +42,6 @@ package states
 		private function onAuthComplete(data:*):void 
 		{
 			FlxG.log("Auth complete : " + data.playerId);
-			CallManager.addHeader("authKey", data.authKey);
 		}
 		
 		private function onMeError(error:*):void 

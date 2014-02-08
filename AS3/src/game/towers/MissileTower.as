@@ -13,7 +13,7 @@ package game.towers
 	 */
 	public class MissileTower extends Tower 
 	{
-		[Embed(source="../../../bin/data/images/missile_tower_gun.png")]
+		[Embed(source="../../../lib/data/images/missile_tower_gun.png")]
 		private var gunClass:Class;
 		
 		private var gun:FlxSprite;

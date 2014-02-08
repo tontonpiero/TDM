@@ -9,10 +9,10 @@ package com.tontonpiero
 	 */
 	public class CallLoader extends URLLoader 
 	{
-		public var id:int;
+		public var id:String;
 		public var available:Boolean;
 		
-		public function CallLoader(id:int) 
+		public function CallLoader(id:String) 
 		{
 			super(null);
 			this.id = id;
@@ -20,7 +20,7 @@ package com.tontonpiero
 		}
 		
 		override public function toString():String {
-			return "[CallLoader available=" + available + "]";
+			return "[CallLoader id=" + id + " available=" + available + "]";
 		}
 		
 	}

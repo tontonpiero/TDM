@@ -9,6 +9,7 @@ package states
 	import org.flixel.FlxSprite;
 	import org.flixel.FlxState;
 	import org.flixel.FlxText;
+	import popups.Popup;
 	
 	/**
 	 * ...
@@ -82,7 +83,8 @@ package states
 		
 		private function onBtnCommunityClicked():void 
 		{
-			FlxG.switchState(new CommunityState());
+			//FlxG.switchState(new CommunityState());
+			add(new Popup());
 		}
 		
 		private function onBtnSettingsClicked():void 

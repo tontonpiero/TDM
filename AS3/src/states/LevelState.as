@@ -2,6 +2,7 @@ package states
 {
 	import flash.display.BlendMode;
 	import game.Level;
+	import game.TowerMenu;
 	import graphics.Background;
 	import org.flixel.FlxButton;
 	import org.flixel.FlxEmitter;
@@ -22,6 +23,8 @@ package states
 		public var level:Level;
 		
 		public var addTowerBtn:FlxButton;
+		
+		public var towerMenu:TowerMenu;
 		
 		public function LevelState(levelData:* = null) 
 		{
@@ -49,6 +52,11 @@ package states
 			
 			addTowerBtn = new FlxButton(0, 240, "Add tower", onBtnAddTowerClicked);
 			add(addTowerBtn);
+			
+			towerMenu = new TowerMenu();
+			add(towerMenu);
+			towerMenu.x = 150;
+			towerMenu.y = 240;
 		}
 	}
 

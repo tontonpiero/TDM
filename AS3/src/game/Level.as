@@ -23,7 +23,7 @@ package game
 	 */
 	public class Level extends FlxGroupXY 
 	{
-		[Embed(source="../../bin/data/json/levels.json", mimeType="application/octet-stream")]
+		[Embed(source="../../lib/data/json/levels.json", mimeType="application/octet-stream")]
 		private static var officials_json:Class;
 		
 		private var wayPoints:Array;

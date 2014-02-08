@@ -11,7 +11,7 @@ package game
 	 */
 	public class Ground extends FlxGroupXY 
 	{
-		[Embed(source="../../bin/data/images/start.png")]
+		[Embed(source="../../lib/data/images/start.png")]
 		private var start_png:Class;
 		
 		private var level:Level;

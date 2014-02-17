@@ -11,8 +11,11 @@ package com.tontonpiero
 	 * It's easy to customize logger, data parsing, you can add dedicated loaders.
 	 * Every call can be customized too, with many options :
 		 * "debug" : set to false to disable logger for this call
+		 * "info" : set to true to add call infos (like totalTime) in callbacks arguments
 		 * "header" : set to false to not add headers
 		 * "timeout" : overrides defaultTimeout
+		 * "priority" : set to true to add call on the top of the queue
+		 * "important" : set to true to add call in the queue even if the queue is full
 		 * "parameters" : add custom parameters to "complete" and "error" callbacks (can be an array of parameters). Don't forget to catch them in the callbacks definition.
 	 * @author Tontonpiero
 	 */
@@ -27,6 +30,7 @@ package com.tontonpiero
 		static private var _loaders:Vector.<CallLoader> = new Vector.<CallLoader>;
 		static private var _dedicatedLoaders:* = {};
 		static private var _queue:Vector.<Call> = new Vector.<Call>;
+		static public var queueSize:uint = 0;
 		
 		public function CallManager() {}
 		
@@ -37,11 +41,13 @@ package com.tontonpiero
 		 * @param	defaultTimeout		the default timeout duration (in ms) apply on every call (0 to deactivate)
 		 * @param	loggerFunction		the function called to log informations (ex : "trace") (one parameter of type String) set null to deactivate
 		 * @param	parseFunction		the function used to decode received data (one parameter of type String that returns an Object) if null, JSON.parse will be used
+		 * @param	queueSize			the maximum size of queued calls (0 = no limit)
 		 */
-		static public function setup(baseUrl:String = null, pollSize:uint = 2, defaultTimeout:Number = 10000, loggerFunction:Function = null, parseFunction:Function = null):void {
+		static public function setup(baseUrl:String = null, pollSize:uint = 2, defaultTimeout:Number = 10000, loggerFunction:Function = null, parseFunction:Function = null, queueSize:uint = 0):void {
 			CallManager.parseFunction = parseFunction;
 			CallManager.loggerFunction = loggerFunction;
 			CallManager.defaultTimeout = defaultTimeout;
+			CallManager.queueSize = queueSize;
 			if ( baseUrl ) CallManager.baseUrl = baseUrl;
 			if ( pollSize == 0 ) pollSize = 1;
 			if( _loaders.length < pollSize ) for (var i:int = _loaders.length; i < pollSize; i++) _loaders.push(new CallLoader(i.toString()));
@@ -92,10 +98,14 @@ package com.tontonpiero
 		}
 		
 		static private function call(url:String, params:* = null, onComplete:Function = null, onError:Function = null, options:* = null):Boolean {
+			if ( queueSize > 0 && _queue.length >= queueSize ) {
+				if( !options || !options.important ) return false;
+			}
 			if ( url == null ) return false;
 			if ( url.charAt(0) == "/" ) url = url.substr(1, url.length - 1);
 			if ( baseUrl && url.substr(0, 4) != "http" ) url = baseUrl + url;
-			_queue.push(new Call(url, params, onComplete, onError, options));
+			var call:Call = new Call(url, params, onComplete, onError, options);
+			if ( call.getOption("priority", false) ) _queue.unshift(call); else _queue.push(call);
 			return checkQueue();
 		}
 		
@@ -109,7 +119,7 @@ package com.tontonpiero
 				var call:Call = _queue[0];
 				var loader:CallLoader = null;
 				if ( call.getOption("loaderId") ) loader = getDedicatedLoader(call.getOption("loaderId"));
-				if( !loader ) loader = getAvailableLoader();
+				else loader = getAvailableLoader();
 				if ( loader ) {
 					call.load(loader);
 					_queue.shift();

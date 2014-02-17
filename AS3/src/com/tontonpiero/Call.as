@@ -6,7 +6,6 @@ package com.tontonpiero
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLRequest;
 	import flash.net.URLVariables;
-	import flash.system.Security;
 	import flash.utils.clearTimeout;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.setTimeout;
@@ -25,6 +24,8 @@ package com.tontonpiero
 		private var _loader:CallLoader;
 		private var _timeoutId:uint;
 		private var _startTime:Number;
+		private var _openTime:Number;
+		private var _callInfo:*;
 		
 		public function Call(url:String, params:* = null, onComplete:Function = null, onError:Function = null, options:* = null) {
 			this.url = url;
@@ -32,6 +33,7 @@ package com.tontonpiero
 			this.onComplete = onComplete;
 			this.onError = onError;
 			this.options = options ? options : { };
+			this._callInfo = { };
 		}
 		
 		public function load(loader:CallLoader):void {
@@ -39,6 +41,7 @@ package com.tontonpiero
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, onIOErrorEvent);
 			_loader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecurityError);
 			_loader.addEventListener(Event.COMPLETE, onLoadingComplete);
+			_loader.addEventListener(Event.OPEN, onLoadingOpen);
 			log("[Call::load] " + this + " (" + _loader.id +")");
 			var request:URLRequest = new URLRequest(url);
 			if ( CallManager.headers && getOption("header", true) ) request.requestHeaders = CallManager.headers;
@@ -61,6 +64,12 @@ package com.tontonpiero
 			if ( timeout > 0 ) _timeoutId = setTimeout(onTimeout, timeout);
 			_startTime = new Date().time;
 			_loader.load(request);
+		}
+		
+		private function onLoadingOpen(e:Event):void 
+		{
+			_openTime = new Date().time;
+			_loader.removeEventListener(Event.OPEN, onLoadingOpen);
 		}
 		
 		public function getOption(key:String, defaultValue:* = null):* {
@@ -94,15 +103,21 @@ package com.tontonpiero
 		
 		private function callbackComplete(data:*):void 
 		{
+			_callInfo.totalTime = new Date().time - _startTime;
+			_callInfo.openingTime = _openTime - _startTime;
+			_callInfo.receiptTime = new Date().time - _openTime;
 			var params:Array = [data];
+			if( getOption("info", false) ) params = params.concat(_callInfo);
 			if( getOption("parameters") ) params = params.concat(getOption("parameters"));
 			if ( onComplete != null ) onComplete.apply(null, params);
 		}
 		
 		private function callbackError(msg:String, code:int):void 
 		{
+			_callInfo.totalTime = code > 0 ? new Date().time - _startTime : 0;
 			log("[Call::error] " + this + " : " + msg + " (" + code +")");
 			var params:Array = [ { msg:msg, code:code } ];
+			if( getOption("info", false) ) params = params.concat(_callInfo);
 			if( getOption("parameters") ) params = params.concat(getOption("parameters"));
 			if ( onError != null ) onError.apply(null, params);
 		}
@@ -133,12 +148,12 @@ package com.tontonpiero
 				_loader.removeEventListener(IOErrorEvent.IO_ERROR, onIOErrorEvent);
 				_loader.removeEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecurityError);
 				_loader.removeEventListener(Event.COMPLETE, onLoadingComplete);
+				_loader.removeEventListener(Event.OPEN, onLoadingOpen);
 			}
 		}
 		
 		public function close():void {
-			var totalTime:Number = new Date().time - _startTime;
-			log("[Call::close] " + this + " (" + totalTime + "ms)");
+			log("[Call::close] " + this + " (totalTime=" + _callInfo.totalTime + "ms receiptTime=" + _callInfo.receiptTime + ")");
 			clearTimeout(_timeoutId);
 			if( _loader ) {
 				removeListeners();
@@ -150,7 +165,7 @@ package com.tontonpiero
 			onComplete = null;
 			params = null;
 			options = null;
-			CallManager.checkQueue();
+			setTimeout(CallManager.checkQueue, 1);
 		}
 		
 		public function toString():String {

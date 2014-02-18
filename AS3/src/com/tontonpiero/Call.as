@@ -82,7 +82,7 @@ package com.tontonpiero
 			close();
 		}
 		
-		private function log(msg:String):void {
+		private function log(msg:*):void {
 			if ( CallManager.loggerFunction != null && getOption("debug", true) ) {
 				CallManager.loggerFunction.call(null, msg);
 			}
@@ -91,7 +91,7 @@ package com.tontonpiero
 		private function onLoadingComplete(e:Event):void 
 		{
 			var data:* = null;
-			try { data = CallManager.parseFunction.call(null, _loader.data); } catch (err:Error) { data = null; }
+			try { data = CallManager.parseFunction.call(null, _loader.data.replace(/\r\n/g, "")); } catch (err:Error) { data = null; }
 			if ( data && data.hasOwnProperty("error") ) {
 				callbackError(data.error, data.errorCode);
 			}

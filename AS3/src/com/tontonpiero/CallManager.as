@@ -103,7 +103,7 @@ package com.tontonpiero
 			}
 			if ( url == null ) return false;
 			if ( url.charAt(0) == "/" ) url = url.substr(1, url.length - 1);
-			if ( baseUrl && url.substr(0, 4) != "http" ) url = baseUrl + url;
+			if ( baseUrl && url.substr(0, 4) != "http" && url.substr(0, 1) != "." ) url = baseUrl + url;
 			var call:Call = new Call(url, params, onComplete, onError, options);
 			if ( call.getOption("priority", false) ) _queue.unshift(call); else _queue.push(call);
 			return checkQueue();

@@ -59,7 +59,6 @@ package com.tontonpiero
 			}
 			//trace(request.method, request.contentType, request.url);
 			request.data = data;
-			_loader.available = false;
 			var timeout:Number = getOption("timeout", CallManager.defaultTimeout);
 			if ( timeout > 0 ) _timeoutId = setTimeout(onTimeout, timeout);
 			_startTime = new Date().time;
@@ -158,7 +157,6 @@ package com.tontonpiero
 			if( _loader ) {
 				removeListeners();
 				_loader.close();
-				_loader.available = true;
 			}
 			_loader = null;
 			onError = null;
